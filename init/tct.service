@@ -1,0 +1,8 @@
+[Unit]
+Description=throttle cpu temp
+
+[Service]
+ExecStart=/usr/local/bin/tct 70
+
+[Install]
+WantedBy=multi-user.target
