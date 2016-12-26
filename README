@@ -8,14 +8,18 @@ throttle cpu temp
     doing large compilations (ex: Linux kernel).
 
     The idea and logic were based on `https://github.com/Sepero/temp-throttle',
-    a shell script. This application was developed in Go and is intended to be
-    executed as a daemon, using little system resources.
+    a shell script. This application was developed in Rust and is intended to
+    be executed as a daemon, using little system resources.
 
 installing
 
-    You will need the Golang compiler installed on your system.
+    You will need the Rust compiler installed on your system.
 
-    Just run `make install'.
+    Compile and install:
+
+        cargo build --release
+        sudo install -o root -g root -m 0755 target/release/throttle-cpu-temp \
+            /usr/local/bin/throttle-cpu-temp
 
 warnings
 
