@@ -75,7 +75,7 @@ fn main() {
 		vec![
 			TermLogger::new(LogLevelFilter::Info, Config::default()).unwrap(),
 		]
-    ).unwrap();
+	).unwrap();
 
 	let args: Vec<String> = env::args().collect();
 	if args.len() != 2 {
