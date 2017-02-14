@@ -5,3 +5,5 @@ authors = ["Antonio Zanardo <zanardo@gmail.com>"]
 
 [dependencies]
 num_cpus = "1.0"
+simplelog = "^0.4.2"
+log = "0.3"

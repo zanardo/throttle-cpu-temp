@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+extern crate simplelog;
 extern crate num_cpus;
 
 use std::env;
@@ -6,6 +9,7 @@ use std::{thread, time};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+use simplelog::{Config, TermLogger, CombinedLogger, LogLevelFilter};
 
 // Sleep interval between temperature checking.
 const SLEEP_TIME_MILLI: u64 = 3000;
@@ -53,12 +57,12 @@ fn get_temp() -> u64 {
 			return parse_int_file(file.to_string()) / 1000;
 		}
 	}
-	println!("impossible to collect current cpu temperature!");
+	error!("impossible to collect current cpu temperature!");
 	process::exit(1);
 }
 
 fn set_freq(freq: u64) {
-	println!("setting frequency to {}", freq);
+	info!("setting frequency to {}", freq);
 	for c in 0..num_cpus::get() {
 		let path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_max_freq", c);
 		let mut fp = File::create(path).unwrap();
@@ -67,28 +71,34 @@ fn set_freq(freq: u64) {
 }
 
 fn main() {
+	CombinedLogger::init(
+		vec![
+			TermLogger::new(LogLevelFilter::Info, Config::default()).unwrap(),
+		]
+    ).unwrap();
+
 	let args: Vec<String> = env::args().collect();
 	if args.len() != 2 {
-		println!("usage: {} <max temp>", args[0]);
+		error!("usage: {} <max temp>", args[0]);
 		process::exit(1);
 	}
 
 	let max_temp: u64;
 	match args[1].parse::<u64>() {
 		Err(_) => {
-			println!("error: invalid temperature: {}", args[1]);
+			error!("invalid temperature: {}", args[1]);
 			process::exit(1);
 		},
 		Ok(x) => max_temp = x,
 	}
-	println!("maximum temperature: {}", max_temp);
+	info!("maximum temperature: {}", max_temp);
 
-	println!("cpu count: {}", num_cpus::get());
+	info!("cpu count: {}", num_cpus::get());
 
 	let min_freq = min_frequency();
-	println!("minimum frequency supported: {}", min_freq);
+	info!("minimum frequency supported: {}", min_freq);
 	let max_freq = max_frequency();
-	println!("maximum frequency supported: {}", max_freq);
+	info!("maximum frequency supported: {}", max_freq);
 
 	let mut cur_freq = max_freq;
 	set_freq(cur_freq);
@@ -108,7 +118,7 @@ fn main() {
 			}
 			set_freq(cur_freq);
 		}
-		println!("current temperature: {}", temp);
+		debug!("current temperature: {}", temp);
 		thread::sleep(time::Duration::from_millis(SLEEP_TIME_MILLI));
 	}
 }
