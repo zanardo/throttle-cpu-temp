@@ -9,7 +9,7 @@ use std::{thread, time};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use simplelog::{Config, TermLogger, CombinedLogger, LogLevelFilter};
+use simplelog::{Config, SimpleLogger, CombinedLogger, LogLevelFilter};
 
 // Sleep interval between temperature checking.
 const SLEEP_TIME_MILLI: u64 = 3000;
@@ -73,7 +73,7 @@ fn set_freq(freq: u64) {
 fn main() {
 	CombinedLogger::init(
 		vec![
-			TermLogger::new(LogLevelFilter::Info, Config::default()).unwrap(),
+			SimpleLogger::new(LogLevelFilter::Info, Config::default()),
 		]
 	).unwrap();
 
