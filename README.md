@@ -18,9 +18,8 @@ You will need the Rust compiler installed on your system.
 Compile and install:
 
 ```bash
-cargo build --release
-sudo install -o root -g root -m 0755 target/release/throttle-cpu-temp \
-    /usr/local/bin/throttle-cpu-temp
+make
+make install
 ```
 
 # Warnings
