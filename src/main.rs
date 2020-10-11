@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate log;
-extern crate num_cpus;
-extern crate simplelog;
 
 use simplelog::{CombinedLogger, Config, LogLevelFilter, SimpleLogger};
 use std::env;
