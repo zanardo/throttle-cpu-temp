@@ -4,8 +4,8 @@ extern crate log;
 use anyhow::{Context, Result};
 use simplelog::{CombinedLogger, Config, LogLevelFilter, SimpleLogger};
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
+use std::fs::{read_to_string, File};
+use std::io::Write;
 use std::path::Path;
 use std::process;
 use std::{thread, time};
@@ -35,38 +35,37 @@ const POSSIBLE_TEMP_FILES: &'static [&'static str] = &[
     "/sys/class/hwmon/hwmon2/device/temp1_input",
 ];
 
-fn parse_int_file(path: String) -> u64 {
-    let mut content = String::new();
-    let mut fp = File::open(path).unwrap();
-    fp.read_to_string(&mut content).unwrap();
-    content.trim().parse::<u64>().unwrap()
+fn parse_int_file(path: String) -> Result<u64> {
+    Ok(read_to_string(path)?.trim().parse()?)
 }
 
-fn min_frequency() -> u64 {
-    parse_int_file(MIN_FREQ_FILE.to_string())
+fn min_frequency() -> Result<u64> {
+    parse_int_file(MIN_FREQ_FILE.to_string()).context("parsing MIN_FREQ_FILE")
 }
 
-fn max_frequency() -> u64 {
-    parse_int_file(MAX_FREQ_FILE.to_string())
+fn max_frequency() -> Result<u64> {
+    parse_int_file(MAX_FREQ_FILE.to_string()).context("parsing MAX_FREQ_FILE")
 }
 
-fn get_temp() -> u64 {
+fn get_temp() -> Result<u64> {
     for file in POSSIBLE_TEMP_FILES {
         if Path::new(file).exists() {
-            return parse_int_file(file.to_string()) / 1000;
+            let temp = parse_int_file(file.to_string())?;
+            return Ok(temp / 1000);
         }
     }
     error!("impossible to collect current cpu temperature!");
     process::exit(1);
 }
 
-fn set_freq(freq: u64) {
+fn set_freq(freq: u64) -> Result<()> {
     info!("setting frequency to {}", freq);
     for c in 0..num_cpus::get() {
         let path = format!("/sys/devices/system/cpu/cpu{}/cpufreq/scaling_max_freq", c);
-        let mut fp = File::create(path).unwrap();
-        fp.write_all(format!("{}\n", freq).as_bytes()).unwrap();
+        let mut fp = File::create(path)?;
+        fp.write_all(format!("{}\n", freq).as_bytes())?;
     }
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -93,27 +92,27 @@ fn main() -> Result<()> {
 
     info!("cpu count: {}", num_cpus::get());
 
-    let min_freq = min_frequency();
+    let min_freq = min_frequency()?;
     info!("minimum frequency supported: {}", min_freq);
-    let max_freq = max_frequency();
+    let max_freq = max_frequency()?;
     info!("maximum frequency supported: {}", max_freq);
 
     let mut cur_freq = max_freq;
-    set_freq(cur_freq);
+    set_freq(cur_freq)?;
     loop {
-        let temp = get_temp();
+        let temp = get_temp()?;
         if temp > max_temp && cur_freq > min_freq {
             cur_freq -= STEP_FREQ;
             if cur_freq < min_freq {
                 cur_freq = min_freq;
             }
-            set_freq(cur_freq);
+            set_freq(cur_freq)?;
         } else if temp < (max_temp - 5) && cur_freq < max_freq {
             cur_freq += STEP_FREQ;
             if cur_freq > max_freq {
                 cur_freq = max_freq;
             }
-            set_freq(cur_freq);
+            set_freq(cur_freq)?;
         }
         debug!("current temperature: {}", temp);
         thread::sleep(time::Duration::from_millis(SLEEP_TIME_MILLI));
